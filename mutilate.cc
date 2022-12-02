@@ -8,6 +8,9 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+//mhkim
+#include <sched.h>
+#include <sys/syscall.h>
 
 #include <queue>
 #include <string>
@@ -42,6 +45,29 @@
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
 using namespace std;
+
+//mhkim
+ConnectionStats Globalstats[64];
+#define gettid() syscall(SYS_gettid)
+#define REPORT_PERIOD 100000
+
+//mhkim
+int getProcessorID() {
+  int ret;
+  int processorId;
+  cpu_set_t cpu_set;
+  CPU_ZERO(&cpu_set);
+
+  ret = sched_getaffinity(gettid(), sizeof(cpu_set_t), &cpu_set);
+
+  for (processorId=0; processorId<64; processorId++) {
+	  if (CPU_ISSET(processorId, &cpu_set))
+		  break;
+  }
+
+  return processorId;
+}
+
 
 gengetopt_args_info args;
 
@@ -905,9 +931,6 @@ void do_mutilate(const vector<string>& servers, options_t& options,
 
   //  V("Start = %f", start);
 
-  if (!args.agentmode_given && args.report_stats_given)
-    report_stats_init();
-
   int stop_latency_n = 0, stop_latency_val = 0;
   if (args.stop_latency_given) {
     char *n_ptr = strtok(args.stop_latency_arg, ":");
@@ -953,19 +976,6 @@ void do_mutilate(const vector<string>& servers, options_t& options,
       assert(qps != 0);
       if (!args.measure_qps_given)
         qps_function_adjust(&options, connections, qps - options.measure_qps);
-    }
-
-    if (!args.agentmode_given && args.report_stats_given && report_stats_is_time(now)) {
-      if (!qps_function_enabled(&options) && !scan_search_enabled(&options)) {
-        qps = options.qps;
-        qps += args.measure_qps_given ? args.measure_qps_arg : 0;
-      }
-      ConnectionStats stats = report_stats_get(now, qps);
-      report_stats_print(now, qps, stats);
-      if (now - start > options.qps_function.warmup_time && stop_latency_n && stats.get_nth(stop_latency_n) > stop_latency_val)
-        restart = false;
-      else if (scan_search_enabled(&options))
-        restart = scan_search_update(&stats);
     }
 
     if (args.agentmode_given)
