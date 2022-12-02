@@ -535,9 +535,9 @@ static struct {
 void report_stats_init(void) {
   report_stats_ctx.prv_time = get_time();
   report_stats_ctx.start_time = report_stats_ctx.prv_time;
-  printf("# start_time = %f\n", report_stats_ctx.start_time);
-  printf("%-6s ", "#time");
-  report_stats_ctx.prv_stats.print_header();
+  //printf("# start_time = %f\n", report_stats_ctx.start_time);
+  //printf("%-6s ", "#time");
+  //report_stats_ctx.prv_stats.print_header();
 }
 
 bool report_stats_is_time(double now) {
@@ -575,10 +575,20 @@ ConnectionStats report_stats_get(double now, int qps) {
 }
 
 void report_stats_print(double now, int qps, ConnectionStats &report_stats) {
+	/*
   printf("%6.3f ", now - report_stats_ctx.start_time);
   report_stats.print_stats("read", report_stats.get_sampler, false);
   printf(" %8.1f", report_stats.get_qps());
   printf(" %8d\n", qps);
+  */
+	//mhkim
+	FILE *fp;
+	unsigned int p99 = (unsigned int)(report_stats.get_nth(99)*1000);
+	if (p99 != 2737373898) {
+		fp = fopen("/var/www/html/memcached/0.txt", "w");
+		fprintf(fp, "%u\n", p99);
+		fclose(fp);
+	}
 }
 
 char random_char[2 * 1024 * 1024];  // Buffer used to generate random values.
