@@ -16,6 +16,9 @@
 #include "binary_protocol.h"
 #include "util.h"
 
+extern ConnectionStats Globalstats[64];
+extern int getProcessorID();
+
 TCPConnection::TCPConnection(struct event_base* _base, struct evdns_base* _evdns,
                        string _hostname, string _port, options_t _options,
                        int _src_port, bool sampling) :
@@ -83,7 +86,9 @@ void TCPConnection::reset() {
   evtimer_del(timer);
   read_state = IDLE;
   write_state = INIT_WRITE;
-  stats = ConnectionStats(stats.sampling);
+
+  //mhkim
+  stats.reset();
 }
 
 
@@ -435,6 +440,12 @@ void TCPConnection::read_callback() {
             op->end_time = now;
 #endif
             stats.log_get(*op);
+			//mhkim
+			int cpu;
+			cpu = getProcessorID();
+			Globalstats[cpu].lock();
+			Globalstats[cpu].log_get(*op);
+			Globalstats[cpu].unlock();
 
             last_rx = now;
             pop_op();
@@ -466,6 +477,12 @@ void TCPConnection::read_callback() {
 #endif
 
         stats.log_get(*op);
+			//mhkim
+			int cpu;
+			cpu = getProcessorID();
+			Globalstats[cpu].lock();
+			Globalstats[cpu].log_get(*op);
+			Globalstats[cpu].unlock();
 
         free(buf);
 
@@ -521,6 +538,12 @@ void TCPConnection::read_callback() {
 #endif
 
         stats.log_get(*op);
+			//mhkim
+			int cpu;
+			cpu = getProcessorID();
+			Globalstats[cpu].lock();
+			Globalstats[cpu].log_get(*op);
+			Globalstats[cpu].unlock();
 
         free(buf);
 

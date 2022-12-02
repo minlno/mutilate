@@ -68,6 +68,28 @@ int getProcessorID() {
   return processorId;
 }
 
+//mhkim
+void *global_stat_report(void *data) {
+  int* threads = (int*)data;
+
+  while (1) {
+    ConnectionStats Reportstats;
+    for (int i=0; i<*threads; i++) {
+      Globalstats[i].lock();
+
+	  Reportstats.accumulate(Globalstats[i]);
+
+	  Globalstats[i].reset();
+	  Globalstats[i].unlock();
+	}
+
+	FILE *fp = fopen("/var/www/html/memcached/0.txt", "w");
+	fprintf(fp, "%u\n", (unsigned int)(Reportstats.get_nth(99)*1000));
+	fclose(fp);
+
+	usleep(REPORT_PERIOD);
+  }
+}
 
 gengetopt_args_info args;
 
@@ -447,7 +469,8 @@ int main(int argc, char **argv) {
       options.qps = cur_qps;
       options.lambda = (double) options.qps / (double) options.lambda_denom * args.lambda_mul_arg;
 
-      stats = ConnectionStats();
+      //stats = ConnectionStats();
+	  stats.reset();
 
       go(servers, options, stats);
 
@@ -469,7 +492,8 @@ int main(int argc, char **argv) {
       options.qps = cur_qps;
       options.lambda = (double) options.qps / (double) options.lambda_denom * args.lambda_mul_arg;
 
-      stats = ConnectionStats();
+      //stats = ConnectionStats();
+	  stats.reset();
 
       go(servers, options, stats);
 
@@ -504,7 +528,8 @@ int main(int argc, char **argv) {
       //        args.server_given /
       //        (args.threads_arg < 1 ? 1 : args.threads_arg);
 
-      stats = ConnectionStats();
+      //stats = ConnectionStats();
+	  stats.reset();
 
       go(servers, options, stats);
 
@@ -556,6 +581,21 @@ void go(const vector<string>& servers, options_t& options,
     prep_agent(servers, options);
   }
 #endif
+
+  //mhkim
+    pthread_t global_stat_reporter;
+  if (1) {
+	pthread_attr_t attr_reporter;
+	pthread_attr_init(&attr_reporter);
+	cpu_set_t mask;
+	CPU_ZERO(&mask);
+	CPU_SET(63, &mask);
+	int ret;
+	if ((ret = pthread_attr_setaffinity_np(&attr_reporter, sizeof(cpu_set_t), &mask)))
+	  DIE("pthread_attr_setaffinity_np() failed: %s", strerror(ret));
+	if (pthread_create(&global_stat_reporter, &attr_reporter, global_stat_report, (void*)&options.threads))
+	  DIE("global_stat_reporter thread creation failed");
+  }
 
   if (options.threads > 1) {
     pthread_t pt[options.threads];
@@ -617,7 +657,10 @@ void go(const vector<string>& servers, options_t& options,
             break;
           }
         }
-      }
+      } else {
+	    //mhkim
+		DIE("affinity option is required");
+	  }
 
       if (pthread_create(&pt[t], &attr, thread_main, &td[t]))
         DIE("pthread_create() failed");
@@ -664,6 +707,8 @@ void go(const vector<string>& servers, options_t& options,
     finish_agent(stats);
   }
 #endif
+  if (1)
+	pthread_cancel(global_stat_reporter);
 }
 
 void* thread_main(void *arg) {

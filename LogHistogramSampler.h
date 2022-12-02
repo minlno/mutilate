@@ -23,11 +23,26 @@ public:
   double sum;
   double sum_sq;
 
+  int bins_size; //mhkim
+
   LogHistogramSampler() = delete;
   LogHistogramSampler(int _bins) : sum(0.0), sum_sq(0.0) {
     assert(_bins > 0);
 
+	//mhkim
+	bins_size = _bins;
+
     bins.resize(_bins + 1, 0);
+  }
+
+  //mhkim
+  void reset() {
+	sum = 0.0;
+	sum_sq = 0.0;
+	bins.clear();
+	samples.clear();
+
+	bins.resize(bins_size+1, 0);
   }
 
   void sample(const Operation &op) {

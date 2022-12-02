@@ -1,7 +1,7 @@
 #!/bin/bash
 
 THREADS=64
-MEASURE=10
+MEASURE=120
 KEY=32
 VALUE=1000
 QPS=$1
@@ -18,4 +18,4 @@ CONN=15
 		   -c $CONN -u 0.0 -K $KEY -V $VALUE \
 		   --popularity=$DIST \
 		   --noload \
-		   -r $RECORDS -t $MEASURE --warmup=5 --qps=$QPS --report-stats=0.1
+		   -r $RECORDS -t $MEASURE --warmup=5 --qps=$QPS

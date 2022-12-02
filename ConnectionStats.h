@@ -5,6 +5,9 @@
 #include <algorithm>
 #include <inttypes.h>
 #include <vector>
+//mhkim
+#include <mutex>
+#include <atomic>
 
 #ifdef USE_ADAPTIVE_SAMPLER
 #include "AdaptiveSampler.h"
@@ -29,7 +32,7 @@ class ConnectionStats {
    get_sampler(200), set_sampler(200), op_sampler(100),
 #endif
    rx_bytes(0), tx_bytes(0), gets(0), sets(0),
-   get_misses(0), skips(0), retransmits(0), sampling(_sampling) {}
+   get_misses(0), skips(0), retransmits(0), sampling(_sampling), lock_(false) {}
 
 #ifdef USE_ADAPTIVE_SAMPLER
   AdaptiveSampler<Operation> get_sampler;
@@ -53,6 +56,23 @@ class ConnectionStats {
   double start, stop;
 
   bool sampling;
+  //mhkim
+  std::atomic<bool> lock_;
+
+  //mhkim
+  void reset() {
+	if (sampling) {
+	  get_sampler.reset();
+	  set_sampler.reset();
+	}
+	rx_bytes = 0;
+	tx_bytes = 0;
+	gets = 0;
+	sets = 0;
+	get_misses = 0;
+	skips = 0;
+	retransmits = 0;
+  }
 
   void log_get(Operation& op) { if (sampling) get_sampler.sample(op); gets++; }
   void log_set(Operation& op) { if (sampling) set_sampler.sample(op); sets++; }
@@ -222,6 +242,16 @@ class ConnectionStats {
     if (newline) printf("\n");
   }
 #endif
+
+  //mhkim
+  void lock() {
+	while (lock_.exchange(true, std::memory_order_acquire)) {
+	  ;
+	}
+  }
+  void unlock() {
+	lock_.store(false, std::memory_order_release);
+  }
 };
 
 #endif // CONNECTIONSTATS_H
