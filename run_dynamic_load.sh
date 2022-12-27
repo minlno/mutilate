@@ -1,7 +1,7 @@
 #!/bin/bash
 
 THREADS=64
-MEASURE=10
+MEASURE=20
 KEY=32
 VALUE=1000
 #QPS=$1
@@ -18,4 +18,4 @@ CONN=15
 		   -c $CONN -u 0.0 -K $KEY -V $VALUE \
 		   --popularity=$DIST \
 		   --noload \
-		   -r $RECORDS -t $MEASURE --scan=100000:640000:60000
+		   -r $RECORDS -t $MEASURE --scan=200000:900000:100000
