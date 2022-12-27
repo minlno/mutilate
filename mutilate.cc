@@ -528,10 +528,6 @@ int main(int argc, char **argv) {
 	  stats.reset();
 
       go(servers, options, stats);
-
-      stats.print_stats("read", stats.get_sampler, false);
-      printf(" %8.1f", stats.get_qps());
-      printf(" %8d\n", q);
 	}
     for (int q = min; q <= max; q += step) {
       args_to_options(&options);
@@ -547,7 +543,7 @@ int main(int argc, char **argv) {
       printf(" %8.1f", stats.get_qps());
       printf(" %8d\n", q);
     }    
-    for (int q = max; q <= min; q -= step) {
+    for (int q = max; q >= min; q -= step) {
       args_to_options(&options);
 
       options.qps = q;
@@ -570,10 +566,6 @@ int main(int argc, char **argv) {
 	  stats.reset();
 
       go(servers, options, stats);
-
-      stats.print_stats("read", stats.get_sampler, false);
-      printf(" %8.1f", stats.get_qps());
-      printf(" %8d\n", q);
 	}
   } else {
     go(servers, options, stats);
