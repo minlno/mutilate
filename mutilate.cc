@@ -519,16 +519,26 @@ int main(int argc, char **argv) {
            "#type", "avg", "min", "1st", "5th", "10th",
            "50th", "90th", "95th", "99th", "QPS", "target");
 
+	for (int i = 0; i < 3; i++) {
+      args_to_options(&options);
+
+      options.qps = min;
+      options.lambda = (double) options.qps / (double) options.lambda_denom * args.lambda_mul_arg;
+	
+	  stats.reset();
+
+      go(servers, options, stats);
+
+      stats.print_stats("read", stats.get_sampler, false);
+      printf(" %8.1f", stats.get_qps());
+      printf(" %8d\n", q);
+	}
     for (int q = min; q <= max; q += step) {
       args_to_options(&options);
 
       options.qps = q;
       options.lambda = (double) options.qps / (double) options.lambda_denom * args.lambda_mul_arg;
-      //      options.lambda = (double) options.qps / options.connections /
-      //        args.server_given /
-      //        (args.threads_arg < 1 ? 1 : args.threads_arg);
 
-      //stats = ConnectionStats();
 	  stats.reset();
 
       go(servers, options, stats);
@@ -537,6 +547,34 @@ int main(int argc, char **argv) {
       printf(" %8.1f", stats.get_qps());
       printf(" %8d\n", q);
     }    
+    for (int q = max; q <= min; q -= step) {
+      args_to_options(&options);
+
+      options.qps = q;
+      options.lambda = (double) options.qps / (double) options.lambda_denom * args.lambda_mul_arg;
+
+	  stats.reset();
+
+      go(servers, options, stats);
+
+      stats.print_stats("read", stats.get_sampler, false);
+      printf(" %8.1f", stats.get_qps());
+      printf(" %8d\n", q);
+    }    
+	for (int i = 0; i < 10; i++) {
+      args_to_options(&options);
+
+      options.qps = min;
+      options.lambda = (double) options.qps / (double) options.lambda_denom * args.lambda_mul_arg;
+	
+	  stats.reset();
+
+      go(servers, options, stats);
+
+      stats.print_stats("read", stats.get_sampler, false);
+      printf(" %8.1f", stats.get_qps());
+      printf(" %8d\n", q);
+	}
   } else {
     go(servers, options, stats);
   }
