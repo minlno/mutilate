@@ -621,7 +621,12 @@ void go(const vector<string>& servers, options_t& options,
 #endif
 
   //mhkim
-    pthread_t global_stat_reporter;
+  FILE *fp = fopen("/var/www/html/memcached/rps.txt", "w");
+  fprintf(fp, "%d\n", options.qps);
+  fclose(fp);
+
+  //mhkim
+  pthread_t global_stat_reporter;
   if (1) {
 	pthread_attr_t attr_reporter;
 	pthread_attr_init(&attr_reporter);
