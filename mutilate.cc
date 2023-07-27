@@ -88,7 +88,7 @@ void *global_stat_report(void *data) {
 	  printf("/var/www/html/memcached/0.txt 파일이 필요함. 또한 nginx 설치도 필요.\n");
 	  exit(1);
 	}
-	fprintf(fp, "%u\n", (unsigned int)(Reportstats.get_nth(99)*1000));
+	fprintf(fp, "%f\n", Reportstats.get_nth(99)*1000);
 	fclose(fp);
 
 	usleep(REPORT_PERIOD);
@@ -507,6 +507,44 @@ int main(int argc, char **argv) {
     }
 
     }
+  } else if (args.burst_given) {
+    char *low_ptr = strtok(args.burst_arg, ":");
+    char *high_ptr = strtok(NULL, ":");
+    char *repeat_ptr = strtok(NULL, ":");
+
+    if (low_ptr == NULL || high_ptr == NULL || repeat_ptr == NULL)
+      DIE("Invalid --scan argument");
+
+	int low = atoi(low_ptr);
+	int high = atoi(high_ptr);
+	int repeat = atoi(repeat_ptr);
+
+    printf("%-7s %7s %7s %7s %7s %7s %7s %7s %7s %7s %8s %8s\n",
+           "#type", "avg", "min", "1st", "5th", "10th",
+           "50th", "90th", "95th", "99th", "QPS", "target");
+
+	for (int i = 0; i < repeat; i++) {
+	  // low load
+	  args_to_options(&options);
+	  options.qps = low;
+      options.lambda = (double) options.qps / (double) options.lambda_denom * args.lambda_mul_arg;
+	  stats.reset();
+	  go(servers, options, stats);
+      stats.print_stats("read", stats.get_sampler, false);
+      printf(" %8.1f", stats.get_qps());
+      printf(" %8d\n", low);
+
+	  // high load
+	  args_to_options(&options);
+	  options.qps = high;
+      options.lambda = (double) options.qps / (double) options.lambda_denom * args.lambda_mul_arg;
+	  stats.reset();
+	  go(servers, options, stats);
+      stats.print_stats("read", stats.get_sampler, false);
+      printf(" %8.1f", stats.get_qps());
+      printf(" %8d\n", high);
+	}
+
   } else if (args.scan_given) {
     char *min_ptr = strtok(args.scan_arg, ":");
     char *max_ptr = strtok(NULL, ":");
