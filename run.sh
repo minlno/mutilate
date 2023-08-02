@@ -1,7 +1,7 @@
 #!/bin/bash
 
 THREADS=64
-MEASURE=10
+MEASURE=30
 KEY=100
 VALUE=4000
 IA=fb_ia
@@ -21,4 +21,4 @@ CONN=15
 		   --popularity=$DIST \
 		   --noload \
 		   -d 100000000000 \
-		   -r $RECORDS -t $MEASURE --warmup=5 --qps=$QPS
+		   -r $RECORDS -t $MEASURE --qps=$QPS

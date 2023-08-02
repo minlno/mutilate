@@ -83,12 +83,13 @@ void *global_stat_report(void *data) {
 	  Globalstats[i].unlock();
 	}
 
-	FILE *fp = fopen("/var/www/html/memcached/0.txt", "w");
+	FILE *fp = fopen("/var/www/html/memcached/p99.txt", "w");
 	if (fp == NULL) {
-	  printf("/var/www/html/memcached/0.txt 파일이 필요함. 또한 nginx 설치도 필요.\n");
+	  printf("/var/www/html/memcached/p99.txt 파일이 필요함. 또한 nginx 설치도 필요.\n");
 	  exit(1);
 	}
-	fprintf(fp, "%f\n", Reportstats.get_nth(99)*1000);
+	// ns 단위로 출력
+	fprintf(fp, "%lu\n", (unsigned long) (Reportstats.get_nth(99)*1000));
 	fclose(fp);
 
 	usleep(REPORT_PERIOD);
